@@ -1,6 +1,7 @@
 ## QT多个ui文件使用
 https://blog.csdn.net/liangyunshan123/article/details/134020052
 这段代码需不需要delete 其他ui？
+有一个Qt项目，存在一个UI文件，最顶层QWidget的objectName为MainWindow。现在我新增一个UI文件，修改最顶层QWidget的objectName为SessionList。如何定义SessionList类，并将其加入到MainWindow布局中
 ## 前向声明
 在Qt中，当你使用Qt Designer设计界面并生成对应的UI类时，通常会在主窗口的头文件中看到这样的代码：
 
@@ -71,4 +72,46 @@ MainWindow::~MainWindow()
 这里，`delete ui;` 会释放 `Ui::MainWindow` 实例所占用的内存。如果不这样做，当主窗口被销毁时，`Ui::MainWindow` 实例所占用的内存不会被释放，从而导致内存泄漏。
 
 总结来说，`ui->setupUi(this);` 设置了UI组件的父对象，确保了这些组件的生命周期与主窗口的生命周期绑定。但是，`Ui::MainWindow` 实例本身并不是一个UI组件，也不是主窗口的子对象，所以它的生命周期需要手动管理。这就是为什么需要在析构函数中使用 `delete ui;` 的原因。
+## [ Qt项目打包](https://blog.csdn.net/m0_73633088/article/details/143131805)
 
+## Inno Setup定义安装程序的多语言支持
+
+```ini
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+```
+
+`.iss` 文件是 Inno Setup 脚本文件，Inno Setup 是一个免费的安装程序制作工具，用于创建 Windows 应用程序的安装程序。在 `.iss` 文件中，`Name` 和 `MessagesFile` 是两个参数，它们通常用于定义安装程序的多语言支持。
+
+- `Name: "english";` 表示这是英语版本的安装程序。`Name` 参数用于标识语言包的名称。
+
+- `MessagesFile: "compiler:Default.isl";` 表示安装程序将使用 `Default.isl` 文件中定义的消息和文本。`MessagesFile` 参数指定了一个 ` isl` 文件，这个文件包含了安装过程中显示的所有文本消息。
+
+**compiler前缀：**
+
+在 Inno Setup 的 `.iss` 文件中，`compiler:` 是一个特殊的前缀，用于指示 Inno Setup 编译器将指定的资源直接嵌入到生成的安装程序文件中，而不是作为外部文件引用。
+
+当使用 `compiler:` 前缀时，Inno Setup 会将指定的文件（如 `MessagesFile` 参数中的 `Default.isl`）的内容直接编译到安装程序的可执行文件中。这样做的好处是：
+
+1. **减少外部依赖**：安装程序不需要依赖外部的 ` isl` 文件，因为所有必要的文本和消息都已经包含在安装程序内部。
+2. **便于分发**：用户在安装时不需要额外下载或寻找语言文件，因为所有内容都已经集成在安装程序中。
+3. **提高安全性**：通过将文件编译到安装程序中，可以减少外部文件被篡改的风险。
+
+**MessagesFile查找路径：**
+
+在 Inno Setup 的 `.iss` 文件中，`MessagesFile` 的路径是相对于 Inno Setup 的安装目录来查找的。当你使用 `compiler:` 前缀时，Inno Setup 编译器会在编译过程中将指定的 `.isl` 文件嵌入到生成的安装程序中。
+
+例如，如果你的 Inno Setup 安装在默认路径 `C:\Program Files (x86)\Inno Setup 6`，并且你的 `.iss` 文件中有这样的配置：
+
+```ini
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+```
+
+Inno Setup 编译器会从 `C:\Program Files (x86)\Inno Setup 6\Languages` 目录开始查找 `Default.isl` 和 `ChineseSimplified.isl` 文件。
+
+如果你没有使用 `compiler:` 前缀，而是提供了一个完整的文件路径，那么 Inno Setup 会直接从那个指定的路径查找文件。但是，通常情况下，我们使用 `compiler:` 前缀来确保语言文件被嵌入到安装程序中，这样安装程序就不需要依赖于外部的语言文件。
+
+如果你添加了自定义语言文件，你需要将这些文件放在 Inno Setup 安装目录下的 `Languages` 文件夹中，或者在 `.iss` 文件中提供这些文件的完整路径。然后，通过 `MessagesFile` 指定这些文件，Inno Setup 编译器在编译安装程序时会将它们嵌入进去。
