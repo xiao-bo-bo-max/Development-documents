@@ -74,7 +74,15 @@ MainWindow::~MainWindow()
 总结来说，`ui->setupUi(this);` 设置了UI组件的父对象，确保了这些组件的生命周期与主窗口的生命周期绑定。但是，`Ui::MainWindow` 实例本身并不是一个UI组件，也不是主窗口的子对象，所以它的生命周期需要手动管理。这就是为什么需要在析构函数中使用 `delete ui;` 的原因。
 ## [ Qt项目打包](https://blog.csdn.net/m0_73633088/article/details/143131805)
 
-## Inno Setup定义安装程序的多语言支持
+# Inno Setup
+
+教程：
+
+[Inno Setup脚本语法大全 - littlejoean - 博客园](https://www.cnblogs.com/joean/p/4842707.html)
+
+[Inno Setup 3 ：语法解析（二）_开源，分享，进步的技术博客_51CTO博客](https://blog.51cto.com/weiyuqingcheng/2132799)
+
+## 安装程序的多语言支持
 
 ```ini
 [Languages]
@@ -115,3 +123,88 @@ Inno Setup 编译器会从 `C:\Program Files (x86)\Inno Setup 6\Languages` 目�
 如果你没有使用 `compiler:` 前缀，而是提供了一个完整的文件路径，那么 Inno Setup 会直接从那个指定的路径查找文件。但是，通常情况下，我们使用 `compiler:` 前缀来确保语言文件被嵌入到安装程序中，这样安装程序就不需要依赖于外部的语言文件。
 
 如果你添加了自定义语言文件，你需要将这些文件放在 Inno Setup 安装目录下的 `Languages` 文件夹中，或者在 `.iss` 文件中提供这些文件的完整路径。然后，通过 `MessagesFile` 指定这些文件，Inno Setup 编译器在编译安装程序时会将它们嵌入进去。
+
+### 添加语言选择功能
+
+要在Inno Setup的安装包中添加语言选择功能，并确保安装后软件显示对应的语言，你需要在.iss脚本文件中进行以下配置：
+
+1. **启用语言选择对话框**：在`[Setup]`段中添加`ShowLanguageDialog=yes`指令。这会显示一个语言选择对话框，让用户在安装开始前选择语言。这是确保用户可以选择安装语言的关键配置。
+   
+   ```ini
+   [Setup]
+   ShowLanguageDialog=yes
+   ```
+
+2. **定义支持的语言和对应的消息文件**：在`[Languages]`段中定义你希望支持的语言及其对应的`.isl`消息文件。每个语言条目都由`Name:`和`MessagesFile:`组成，分别指定语言代码和消息文件的路径。
+   
+   ```ini
+   [Languages]
+   Name: "english"; MessagesFile: "compiler:Default.isl"
+   Name: "chinesesimplified"; MessagesFile: "compiler:Languages\ChineseSimplified.isl"
+   ```
+   
+   在这个例子中，`Default.isl`是英文消息文件，而`ChineseSimplified.isl`是简体中文消息文件。`compiler:`前缀表示文件被编译到安装程序中。
+
+3. **保存并编译脚本**：保存你的.iss脚本文件，然后使用Inno Setup编译器编译它以生成安装程序。
+
+4. **测试安装程序**：运行生成的安装程序以测试语言选择功能是否正常工作。
+
+通过以上步骤，你可以让用户在安装过程中选择语言，并且确保安装后的软件界面显示为所选语言。这样，你就可以为用户提供多语言支持，提升用户体验。
+
+## Build & Run
+
+Inno Setup 提供了两种主要的操作来处理 `.iss` 文件：编译（Build）和运行（Run）。这两种操作的区别在于它们的执行环境和目的：
+
+1. **编译（Build）**：
+   
+   - **目的**：编译（或构建）`.iss` 文件是为了生成一个安装程序（通常是一个 `.exe` 文件），这个安装程序可以在任何目标计算机上运行以安装软件。
+   - **执行环境**：当你编译 `.iss` 文件时，Inno Setup 编译器读取脚本文件，将其转换为一个独立的可执行安装程序。这个过程中，编译器会处理 `.iss` 文件中的所有指令，包括文件复制、注册表操作、创建快捷方式等，并将其打包成一个单一的可执行文件。
+   - **结果**：编译操作完成后，你会得到一个 `.exe` 文件，这个文件包含了安装程序的所有内容和指令，可以分发给用户进行安装。
+
+2. **运行（Run）**：
+   
+   - **目的**：运行 `.iss` 文件通常是为了在当前计算机上直接执行安装程序，而不是编译生成一个新的安装程序。
+   - **执行环境**：当你运行 `.iss` 文件时，Inno Setup 编译器会直接执行 `.iss` 文件中的脚本，而不是生成一个新的 `.exe` 文件。这意味着所有的安装操作（如文件复制、注册表修改等）都会立即在当前系统上执行。
+   - **结果**：运行操作完成后，如果 `.iss` 文件中包含了安装指令，那么这些指令会被执行，软件会被安装到你的系统上。这通常用于测试安装脚本，确保一切按预期工作。
+
+总结来说，编译 `.iss` 文件是为了生成一个可分发的安装程序，而运行 `.iss` 文件则是直接执行安装操作。在实际使用中，你会先编译 `.iss` 文件生成安装程序，然后分发给用户；在开发和测试阶段，你可能会直接运行 `.iss` 文件来测试安装过程是否正确。
+
+## MsgBox
+
+```pascal
+MsgBox(ExpandConstant('{cm:AlreadyInstalled}')+ #10#10, mbConfirmation, MB_YESNO)
+```
+
+在 Inno Setup 的 `MsgBox` 函数中：
+
+- `#10` 表示换行符，它在 Pascal 字符串中用来插入一个新行。这与许多编程语言中的 `\n` 相似。
+
+- `mbConfirmation` 是一个消息框类型常量，它指定消息框的风格。`mbConfirmation` 表示消息框将显示“是（Y）”和“否（N）”按钮，让用户进行确认选择。
+
+- `MB_YESNO` 是一个按钮常量，它指定消息框中显示哪些按钮。`MB_YESNO` 表示将显示“是（Yes）”和“否（No）”两个按钮。
+
+- `ExpandConstant` 函数用于展开常量，这些常量可以是 Inno Setup 预定义的常量，也可以是自定义常量。`'{cm:...}'` 是一种特殊格式，用于引用编译时或运行时的消息，这些消息通常用于界面元素，如按钮文本或提示信息。
+
+## .isl常量定义
+
+在 Inno Setup 的 `.isl` 文件中，如果你想要为消息添加换行，可以使用 `%n` 来表示一个新行。`%n` 是一个特殊的序列，Inno Setup 在处理消息时会将其替换为当前操作系统的换行符。
+
+```ini
+[CustomMessages]
+AlreadyInstalled=安装程序检测到 HATWebCtrlPlugin 已经安装。%n%n单击“是(Y)”重新安装程序%n单击“否(N)”退出安装。
+RunningProgram=程序正在运行中。%n%n单击“是(Y)”程序退出，继续卸载%n单击“否(N)”退出卸载。
+```
+
+在上面的例子中，`%n%n` 被用来在消息中插入两个换行符，这样在显示消息时，警告或提示信息会在指定的位置换行。当 Inno Setup 显示这些消息时，`%n` 会被转换成适当的换行符，从而在用户界面上正确地显示多行文本。
+
+## 常见设置
+
+### 开启日志
+
+```pascal
+[setup]
+//打开日志功能
+SetupLogging=yes
+```
+
+开启后日志将默认生成在C:\Users\用户名\AppData\Local\Temp目录下并以类似Setup Log 2024-10-29 #001.txt命名。
